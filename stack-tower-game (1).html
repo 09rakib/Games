@@ -1,0 +1,1460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Stack Tower — Bangladesh</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Hind+Siliguri:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    html, body { height: 100%; overflow: hidden; }
+    body {
+      background: #050508;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Inter', sans-serif;
+      touch-action: none;
+    }
+    #app {
+      width: 100%;
+      max-width: 420px;
+      height: 100vh;
+      max-height: 860px;
+      position: relative;
+      background: #0F0F17;
+      overflow: hidden;
+      border-radius: 0;
+      box-shadow: 0 0 80px rgba(0,0,0,0.6);
+    }
+    canvas {
+      display: block;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      pointer-events: none;
+    }
+    .glass {
+      background: rgba(255,255,255,0.06);
+      backdrop-filter: blur(14px) saturate(140%);
+      -webkit-backdrop-filter: blur(14px) saturate(140%);
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      z-index: 6;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 22px;
+      overflow-y: auto;
+      pointer-events: none;
+    }
+    .screen.active { display: flex; pointer-events: auto; }
+    .screen.panel { justify-content: flex-start; padding-top: 64px; }
+
+    /* menu */
+    #menu .logo {
+      font-family: 'Fredoka', sans-serif;
+      font-weight: 700;
+      font-size: 36px;
+      line-height: 1.05;
+      background: linear-gradient(120deg,#F4C430,#FF8A5B 40%,#F4C430 80%);
+      background-size: 220% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shine 4s linear infinite;
+    }
+    @keyframes shine { 0% { background-position: 0% 0; } 100% { background-position: 220% 0; } }
+    #menu .logo .bn {
+      display: block;
+      font-family: 'Hind Siliguri', sans-serif;
+      font-weight: 600;
+      font-size: 16px;
+      color: #E8B84B;
+      margin-top: 6px;
+      -webkit-text-fill-color: #E8B84B;
+      animation: none;
+    }
+    #menu .tagline { color: #A2A2BE; font-size: 13px; max-width: 280px; }
+    .theme-strip { display: flex; gap: 6px; margin: 4px 0 6px; flex-wrap: wrap; justify-content: center; }
+    .theme-chip {
+      width: 32px; height: 32px; border-radius: 10px; display: flex;
+      align-items: center; justify-content: center; font-size: 15px;
+      border: 1px solid rgba(255,255,255,0.14);
+    }
+    .stat-pills { display: flex; gap: 10px; margin-bottom: 4px; }
+    .pill {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px; padding: 8px 14px; font-size: 13px;
+      font-family: 'Fredoka', sans-serif; display: flex; align-items: center; gap: 6px;
+    }
+    .pill b { font-size: 15px; }
+    .menu-actions { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 260px; margin-top: 6px; }
+    .play-btn {
+      font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 18px;
+      background: linear-gradient(135deg,#F4C430,#E8752C); color: #1a1206; border: none;
+      border-radius: 16px; padding: 16px 0; cursor: pointer;
+      box-shadow: 0 10px 26px -8px rgba(232,117,44,0.55);
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+    .play-btn:active { transform: scale(0.96); }
+    .menu-row { display: flex; gap: 9px; }
+    .menu-btn {
+      flex: 1; font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 13.5px;
+      background: rgba(255,255,255,0.06); color: #F2F1F8; border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 13px; padding: 12px 6px; cursor: pointer;
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      transition: transform .12s ease, background .12s ease;
+    }
+    .menu-btn:active { transform: scale(0.95); background: rgba(255,255,255,0.10); }
+    .menu-btn .mb-icon { font-size: 18px; }
+
+    /* panels */
+    .panel-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 22px; margin-bottom: 2px; }
+    .panel-sub { font-family: 'Hind Siliguri', sans-serif; color: #A2A2BE; font-size: 12.5px; margin-bottom: 14px; }
+    .list { display: flex; flex-direction: column; gap: 9px; width: 100%; max-width: 340px; }
+    .card {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 14px; padding: 12px 14px; display: flex;
+      align-items: center; gap: 12px; text-align: left;
+    }
+    .card-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; flex: none; }
+    .card-body { flex: 1; min-width: 0; }
+    .card-title { font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 14px; }
+    .card-desc { font-size: 11.5px; color: #A2A2BE; margin-top: 1px; }
+    .card-action { flex: none; }
+    .buy-btn {
+      font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 12px; border: none;
+      border-radius: 10px; padding: 8px 12px; cursor: pointer; background: #F4C430;
+      color: #1a1206; white-space: nowrap;
+    }
+    .buy-btn.owned { background: rgba(255,255,255,0.12); color: #A2A2BE; }
+    .buy-btn.equipped { background: #5CD68C; color: #062010; }
+    .progress-track { height: 6px; border-radius: 4px; background: rgba(255,255,255,0.08); margin-top: 6px; overflow: hidden; }
+    .progress-fill { height: 100%; background: #F4C430; border-radius: 4px; }
+    .card.locked { opacity: 0.55; }
+    .card.unlocked .card-icon { background: rgba(244,196,48,0.18); }
+
+    /* game over */
+    #gameover .go-title { font-family: 'Fredoka', sans-serif; font-weight: 700; font-size: 24px; }
+    #gameover .go-sub { font-family: 'Hind Siliguri', sans-serif; color: #A2A2BE; font-size: 12.5px; margin-top: -6px; }
+    .go-score { font-family: 'Fredoka', sans-serif; font-size: 48px; font-weight: 700; margin: 2px 0 6px; }
+    .go-stats {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%; max-width: 300px; margin-bottom: 6px;
+    }
+    .go-stat {
+      background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 12px; padding: 9px 10px; text-align: left;
+    }
+    .go-stat .gs-label { font-size: 10px; color: #A2A2BE; text-transform: uppercase; letter-spacing: 0.05em; }
+    .go-stat .gs-val { font-family: 'Fredoka', sans-serif; font-size: 16px; font-weight: 600; margin-top: 2px; }
+    .btn-primary {
+      font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 16px; background: #F2F1F8;
+      color: #12121C; border: none; border-radius: 14px; padding: 15px 34px; margin-top: 8px;
+      cursor: pointer; width: 100%; max-width: 300px;
+    }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-ghost { font-family: 'Inter'; font-size: 13.5px; color: #A2A2BE; background: none; border: none; margin-top: 2px; cursor: pointer; text-decoration: underline; }
+
+    /* HUD */
+    #hud {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 4; display: none;
+      padding: 16px 16px 0; pointer-events: none;
+    }
+    #app.in-game #hud { display: block; }
+    .hud-row {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      gap: 6px;
+    }
+    .hud-stat {
+      background: rgba(10,10,16,0.4); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+      padding: 6px 10px; font-family: 'Fredoka', sans-serif; line-height: 1.1;
+      min-width: 56px;
+    }
+    .hud-stat .hs-label { font-family: 'Inter'; font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+    .hud-stat .hs-val { font-size: 15px; font-weight: 600; }
+    .hud-center {
+      text-align: center; background: rgba(10,10,16,0.4); backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.12); border-radius: 12px;
+      padding: 6px 12px; min-width: 60px;
+    }
+    .hud-center .hs-label { font-family: 'Inter'; font-size: 8px; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(255,255,255,0.55); }
+    .hud-center .hs-val { font-size: 15px; font-weight: 600; }
+    .level-bar-wrap { margin-top: 8px; height: 5px; border-radius: 4px; background: rgba(255,255,255,0.12); overflow: hidden; }
+    .level-bar-fill { height: 100%; background: linear-gradient(90deg,#F4C430,#FF8A5B); border-radius: 4px; transition: width .25s ease; }
+
+    .back-btn, .icon-toggle {
+      position: absolute; top: 18px; background: rgba(20,20,30,0.55); border: 1px solid rgba(255,255,255,0.14);
+      border-radius: 10px; width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; font-size: 15px; color: #F2F1F8; z-index: 8; pointer-events: auto;
+    }
+    .back-btn { left: 16px; display: none; }
+    #app.in-game .back-btn, #app.panel-open .back-btn { display: flex; }
+    .icon-toggle { right: 16px; }
+    #musicToggle { right: 58px; }
+
+    .toast {
+      position: absolute; left: 50%; transform: translate(-50%,-50%) scale(0.6);
+      text-align: center; opacity: 0; pointer-events: none; z-index: 5;
+      font-family: 'Fredoka', sans-serif; font-weight: 700;
+    }
+    .combo-toast { top: 36%; font-size: 22px; }
+    .scene-toast {
+      top: 44%; font-size: 15px; background: rgba(8,8,14,0.55); backdrop-filter: blur(8px);
+      padding: 12px 22px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.18);
+    }
+    .scene-toast .st-icon { font-size: 30px; display: block; }
+    .scene-toast .st-bn { font-family: 'Hind Siliguri'; font-size: 18px; display: block; margin-top: 2px; font-weight: 600; }
+    .level-toast { top: 30%; font-size: 28px; color: #fff; }
+    .toast-anim { animation: toastpop 1s ease forwards; }
+    .toast-anim-long { animation: toastpop 1.5s ease forwards; }
+    @keyframes toastpop {
+      0% { opacity: 0; transform: translate(-50%,-50%) scale(0.55); }
+      16% { opacity: 1; transform: translate(-50%,-50%) scale(1.1); }
+      26% { transform: translate(-50%,-50%) scale(1); }
+      80% { opacity: 1; }
+      100% { opacity: 0; transform: translate(-50%,-58%) scale(1); }
+    }
+    .flash-overlay { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; z-index: 9; }
+    .tap-hint {
+      position: absolute; bottom: 22px; left: 50%; transform: translateX(-50%);
+      font-size: 11px; color: rgba(255,255,255,0.5); letter-spacing: 0.06em;
+      z-index: 4; pointer-events: none; display: none;
+    }
+    #app.in-game .tap-hint { display: block; }
+    .achv-progress { font-size: 11px; color: #A2A2BE; margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <canvas id="canvas"></canvas>
+  <div class="flash-overlay" id="flashOverlay"></div>
+
+  <button class="back-btn" id="backBtn" title="Back">←</button>
+  <button class="icon-toggle" id="soundToggle" title="Sound">🔊</button>
+  <button class="icon-toggle" id="musicToggle" title="Music">🎵</button>
+
+  <div id="hud">
+    <div class="hud-row">
+      <div class="hud-stat"><div class="hs-label">Score</div><div class="hs-val" id="hScore">0</div></div>
+      <div class="hud-center"><div class="hs-label">Level</div><div class="hs-val" id="hLevel">1</div></div>
+      <div class="hud-stat"><div class="hs-label">Best</div><div class="hs-val" id="hBest">0</div></div>
+      <div class="hud-stat" id="coinHud"><div class="hs-label">🪙</div><div class="hs-val" id="hCoins">0</div></div>
+    </div>
+    <div class="level-bar-wrap"><div class="level-bar-fill" id="levelBar" style="width:0%;"></div></div>
+  </div>
+
+  <div class="toast combo-toast" id="comboToast"></div>
+  <div class="toast scene-toast" id="sceneToast"><span class="st-icon" id="sceneIcon"></span><span id="sceneName"></span><span class="st-bn" id="sceneBn"></span></div>
+  <div class="toast level-toast" id="levelToast"></div>
+  <div class="toast" id="achvToast" style="top:14%; font-size:14px; background:rgba(8,8,14,0.6); backdrop-filter:blur(8px); padding:10px 18px; border-radius:12px; border:1px solid rgba(244,196,48,0.4);"></div>
+  <div class="tap-hint">TAP ANYWHERE TO DROP</div>
+
+  <!-- MENU -->
+  <div class="screen active" id="menu">
+    <div class="logo">Stack Tower<span class="bn">বাংলাদেশ ল্যান্ডমার্ক</span></div>
+    <div class="tagline">গ্রাম থেকে কুয়াকাটা — ১০টি দৃশ্যপট, প্রতি ১০ স্কোরে নতুন জায়গায়।</div>
+    <div class="theme-strip" id="menuThemeStrip"></div>
+    <div class="stat-pills">
+      <div class="pill">🏆 <b id="menuBest">0</b></div>
+      <div class="pill">🪙 <b id="menuCoins">0</b></div>
+    </div>
+    <div class="menu-actions">
+      <button class="play-btn" id="playBtn">Play</button>
+      <div class="menu-row">
+        <button class="menu-btn" id="shopBtn"><span class="mb-icon">🛍️</span>Shop</button>
+        <button class="menu-btn" id="missionsBtn"><span class="mb-icon">🎯</span>Missions</button>
+        <button class="menu-btn" id="achvBtn"><span class="mb-icon">🏅</span>Achievements</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SHOP -->
+  <div class="screen panel" id="shop">
+    <div class="panel-title">Shop</div>
+    <div class="panel-sub" id="shopCoinsLabel">🪙 0 coins</div>
+    <div class="list" id="skinList"></div>
+    <div class="list" id="trailList" style="margin-top:16px;"></div>
+  </div>
+
+  <!-- MISSIONS -->
+  <div class="screen panel" id="missions">
+    <div class="panel-title">Daily Missions</div>
+    <div class="panel-sub">প্রতিদিন নতুন মিশন — রিসেট হয় প্রতি দিন</div>
+    <div class="list" id="missionList"></div>
+  </div>
+
+  <!-- ACHIEVEMENTS -->
+  <div class="screen panel" id="achievements">
+    <div class="panel-title">Achievements</div>
+    <div class="achv-progress" id="achvProgress"></div>
+    <div class="list" id="achvList"></div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="screen" id="gameover">
+    <div class="go-title" id="goTitle">Tower Collapsed 🏢</div>
+    <div class="go-sub" id="goSub"></div>
+    <div class="go-score" id="goScore">0</div>
+    <div class="go-stats">
+      <div class="go-stat"><div class="gs-label">Best Combo</div><div class="gs-val" id="gBestCombo">0</div></div>
+      <div class="go-stat"><div class="gs-label">Accuracy</div><div class="gs-val" id="gAccuracy">0%</div></div>
+      <div class="go-stat"><div class="gs-label">Tower Height</div><div class="gs-val" id="gHeight">0</div></div>
+      <div class="go-stat"><div class="gs-label">Coins Earned</div><div class="gs-val" id="gCoinsEarned">0</div></div>
+      <div class="go-stat"><div class="gs-label">Scene Reached</div><div class="gs-val" id="gScene">—</div></div>
+      <div class="go-stat"><div class="gs-label">Play Time</div><div class="gs-val" id="gTime">0s</div></div>
+    </div>
+    <button class="btn-primary" id="retryBtn">Play Again</button>
+    <button class="btn-ghost" id="menuBtn2">Back to Menu</button>
+  </div>
+</div>
+
+<script>
+  (function(){
+    // ---- helpers ----
+    const el = id => document.getElementById(id);
+    const lerp = (a,b,t) => a + (b-a)*t;
+    const clamp = (v,a,b) => Math.max(a, Math.min(b,v));
+    const rand = (a,b) => a + Math.random()*(b-a);
+
+    // ---- theme drawing ----
+    function drawClouds(ctx,t,w,h,band,count,color,speed){
+      ctx.fillStyle=color;
+      for(let i=0;i<count;i++){
+        const seed=i*137.5;
+        const x = ((seed*3 + t*speed*10) % (w+160)) - 80;
+        const y = band.y0 + (Math.sin(seed)*0.5+0.5)*(band.y1-band.y0);
+        const s = 18 + (seed%20);
+        ctx.globalAlpha=0.5;
+        ctx.beginPath();
+        ctx.ellipse(x,y,s,s*0.5,0,0,7);
+        ctx.ellipse(x+s*0.7,y+s*0.12,s*0.7,s*0.42,0,0,7);
+        ctx.ellipse(x-s*0.6,y+s*0.15,s*0.55,s*0.36,0,0,7);
+        ctx.fill();
+      }
+      ctx.globalAlpha=1;
+    }
+    function drawBirds(ctx,t,w,h,band,count,color,speed){
+      ctx.strokeStyle=color; ctx.lineWidth=1.6; ctx.globalAlpha=0.65;
+      for(let i=0;i<count;i++){
+        const seed=i*91.3;
+        const x = ((seed*4 + t*speed*22) % (w+100)) - 50;
+        const y = band.y0 + (Math.sin(seed*1.7)*0.5+0.5)*(band.y1-band.y0) + Math.sin(t*2+seed)*4;
+        const flap = Math.sin(t*9+seed)*4;
+        ctx.beginPath();
+        ctx.moveTo(x-6,y+flap); ctx.quadraticCurveTo(x,y-4,x+6,y+flap);
+        ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+    function drawWaves(ctx,t,w,h,band,amp,color,speed){
+      ctx.fillStyle=color;
+      ctx.beginPath();
+      ctx.moveTo(0,h);
+      ctx.lineTo(0,band.y0);
+      for(let x=0;x<=w;x+=14){
+        ctx.lineTo(x, band.y0 + Math.sin(x*0.045 + t*speed)*amp);
+      }
+      ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+    }
+    function drawFogBands(ctx,t,w,h,bands,color,speed){
+      bands.forEach((b,i)=>{
+        const off = (t*speed*(i%2===0?1:-1)*8) % (w*2);
+        ctx.fillStyle=color;
+        ctx.globalAlpha=b.alpha;
+        ctx.beginPath();
+        ctx.ellipse((off%w)-w*0.2, b.y, w*0.7, b.h, 0,0,7);
+        ctx.ellipse(((off+w*0.6)%w)-w*0.2, b.y, w*0.6, b.h*0.8, 0,0,7);
+        ctx.fill();
+      });
+      ctx.globalAlpha=1;
+    }
+    function drawBlinkingLights(ctx,t,positions,color){
+      ctx.fillStyle=color;
+      positions.forEach(p=>{
+        const a = 0.3 + 0.7*Math.abs(Math.sin(t*p.speed+p.phase));
+        ctx.globalAlpha = a;
+        ctx.fillRect(p.x,p.y,2.4,3.2);
+      });
+      ctx.globalAlpha=1;
+    }
+    function drawSkyline(ctx,w,h,color){
+      ctx.fillStyle=color;
+      let x=0; const seed=[0.5,0.8,0.35,0.65,0.42,0.9,0.3,0.55,0.7,0.4];
+      let i=0; const lights=[];
+      while(x<w){
+        const bw = w*0.09 + seed[i%seed.length]*w*0.05;
+        const bh = h*0.16 + seed[i%seed.length]*h*0.22;
+        const by = h*0.62-bh;
+        ctx.fillRect(x,by,bw,bh);
+        for(let wy=by+8; wy<by+bh-6; wy+=11){
+          for(let wx=x+5; wx<x+bw-5; wx+=9){
+            if(((wx*13+wy*7)|0)%5===0) lights.push({x:wx,y:wy,speed:1+Math.random()*2,phase:Math.random()*10});
+          }
+        }
+        x+=bw+4; i++;
+      }
+      return lights;
+    }
+    function drawCars(ctx,t,w,h,y,count,color,speed){
+      ctx.fillStyle=color;
+      for(let i=0;i<count;i++){
+        const seed=i*57.2;
+        const x = ((seed*6 + t*speed*40) % (w+60)) - 30;
+        ctx.globalAlpha=0.7;
+        ctx.fillRect(x,y,14,2.4);
+      }
+      ctx.globalAlpha=1;
+    }
+    function drawBoats(ctx,t,w,h,band,count,color,speed){
+      ctx.fillStyle=color;
+      for(let i=0;i<count;i++){
+        const seed=i*211.4;
+        const x = ((seed*5 + t*speed*14) % (w+80)) - 40;
+        const y = band.y0 + (Math.sin(seed)*0.5+0.5)*(band.y1-band.y0);
+        ctx.globalAlpha=0.55;
+        ctx.beginPath();
+        ctx.moveTo(x-10,y); ctx.lineTo(x+10,y); ctx.lineTo(x+6,y+6); ctx.lineTo(x-6,y+6);
+        ctx.closePath(); ctx.fill();
+        ctx.fillRect(x-1,y-10,2,10);
+      }
+      ctx.globalAlpha=1;
+    }
+    function drawMountainLayers(ctx,w,h,layers){
+      layers.forEach(L=>{
+        ctx.fillStyle=L.color;
+        ctx.beginPath(); ctx.moveTo(0,h);
+        for(let x=0;x<=w;x+=20){
+          ctx.lineTo(x, L.y - Math.sin(x*0.02+L.y)*L.amp*0.3 - L.amp*0.4*Math.sin(x*0.008));
+        }
+        ctx.lineTo(w,h); ctx.closePath(); ctx.fill();
+      });
+    }
+    function drawSunGlow(ctx,t,x,y,r,color){
+      const g = ctx.createRadialGradient(x,y,0,x,y,r);
+      g.addColorStop(0,color+'CC'); g.addColorStop(1,color+'00');
+      ctx.fillStyle=g;
+      ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    }
+    function drawGrassSway(ctx,t,w,h,y,color,speed){
+      ctx.strokeStyle=color; ctx.lineWidth=2; ctx.globalAlpha=0.5;
+      for(let x=0; x<w; x+=9){
+        const sway = Math.sin(t*speed + x*0.3)*4;
+        ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x+sway,y-10); ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
+    function drawStars(ctx,t,w,h,count,color){
+      ctx.fillStyle=color;
+      for(let i=0;i<count;i++){
+        const seed=i*73.1;
+        const x=(seed*3.7)%w, y=(seed*5.3)%(h*0.4);
+        const a = 0.3+0.7*Math.abs(Math.sin(t*1.5+seed));
+        ctx.globalAlpha=a;
+        ctx.fillRect(x,y,1.6,1.6);
+      }
+      ctx.globalAlpha=1;
+    }
+
+    // ---- THEMES ----
+    let skylineLightsCache = {};
+    const THEMES = [
+      { key:'village', name:'Village', bn:'গ্রাম', icon:'🌳', sky:['#FDE9A0','#BFE0AE'], blockGrad:['#C68642','#8B5E34'], accent:'#E8B84B',
+        draw(ctx,w,h,t){
+          drawClouds(ctx,t,w,h,{y0:h*0.08,y1:h*0.22},4,'rgba(255,255,255,0.55)',0.6);
+          drawBirds(ctx,t,w,h,{y0:h*0.14,y1:h*0.24},3,'rgba(60,60,60,0.5)',0.7);
+          ctx.fillStyle='rgba(70,90,60,0.35)';
+          [[w*0.18,h*0.62,34],[w*0.75,h*0.66,44],[w*0.5,h*0.7,26]].forEach(([x,y,s])=>{
+            ctx.beginPath(); ctx.moveTo(x-s,y); ctx.lineTo(x,y-s*0.8); ctx.lineTo(x+s,y); ctx.closePath(); ctx.fill();
+            ctx.fillRect(x-s*0.5,y,s,s*0.6);
+          });
+          drawWaves(ctx,t,w,h,{y0:h*0.86},4,'rgba(140,190,210,0.35)',1.2);
+          drawGrassSway(ctx,t,w,h,h*0.98,'rgba(70,110,60,0.4)',2.2);
+        }
+      },
+      { key:'dhaka', name:'Dhaka City', bn:'ঢাকা', icon:'🏙️', sky:['#2B1D4E','#FF8A5B'], blockGrad:['#6E7C91','#3F4756'], accent:'#FF8A5B',
+        draw(ctx,w,h,t){
+          drawStars(ctx,t,w,h,30,'#ffffff');
+          if(!skylineLightsCache[w]) skylineLightsCache[w]=drawSkyline(ctx,w,h,'rgba(15,12,30,0.001)');
+          drawSkyline(ctx,w,h,'rgba(15,12,30,0.6)');
+          drawBlinkingLights(ctx,t,skylineLightsCache[w]||[],'rgba(255,211,122,0.8)');
+          drawCars(ctx,t,w,h,h*0.635,5,'rgba(255,150,90,0.8)',1);
+        }
+      },
+      { key:'padma', name:'Padma Bridge', bn:'পদ্মা সেতু', icon:'🌉', sky:['#8ECFEF','#EAF6FB'], blockGrad:['#9BA7B0','#5C6670'], accent:'#F4C430',
+        draw(ctx,w,h,t){
+          drawWaves(ctx,t,w,h,{y0:h*0.66},5,'rgba(74,144,164,0.4)',1);
+          drawWaves(ctx,t,w,h,{y0:h*0.72},4,'rgba(74,144,164,0.3)',1.4);
+          [w*0.22,w*0.5,w*0.78].forEach(x=>{
+            ctx.fillStyle='rgba(53,80,122,0.55)';
+            ctx.fillRect(x-6,h*0.32,12,h*0.36);
+            ctx.strokeStyle='rgba(53,80,122,0.5)'; ctx.lineWidth=2;
+            for(let k=-4;k<=4;k++){ ctx.beginPath(); ctx.moveTo(x,h*0.34); ctx.lineTo(x+k*22,h*0.62); ctx.stroke(); }
+          });
+          drawBoats(ctx,t,w,h,{y0:h*0.7,y1:h*0.82},2,'rgba(60,50,40,0.5)',1);
+          drawBirds(ctx,t,w,h,{y0:h*0.15,y1:h*0.25},2,'rgba(60,60,60,0.4)',0.6);
+        }
+      },
+      { key:'coxsbazar', name:"Cox's Bazar", bn:'কক্সবাজার', icon:'🌊', sky:['#FFB88C','#FF6F91'], blockGrad:['#E8C39E','#D2A679'], accent:'#2EC4B6',
+        draw(ctx,w,h,t){
+          drawSunGlow(ctx,t,w*0.5,h*0.42,90,'#FFE29A');
+          drawWaves(ctx,t,w,h,{y0:h*0.66},6,'rgba(46,134,171,0.45)',1.3);
+          drawWaves(ctx,t,w,h,{y0:h*0.74},4,'rgba(46,134,171,0.3)',1.8);
+          drawBirds(ctx,t,w,h,{y0:h*0.18,y1:h*0.3},3,'rgba(255,255,255,0.8)',0.9);
+          const sway=Math.sin(t*1.4)*4;
+          ctx.strokeStyle='rgba(80,55,30,0.5)'; ctx.lineWidth=6;
+          ctx.beginPath(); ctx.moveTo(w*0.85,h*0.66); ctx.quadraticCurveTo(w*0.8+sway,h*0.5,w*0.83+sway,h*0.4); ctx.stroke();
+          ctx.fillStyle='rgba(50,110,60,0.5)';
+          for(let k=0;k<5;k++){ const a=k*1.2+sway*0.02; ctx.beginPath();
+            ctx.ellipse(w*0.83+Math.cos(a)*14+sway,h*0.4+Math.sin(a)*8,16,6,a,0,7); ctx.fill(); }
+        }
+      },
+      { key:'bandarban', name:'Bandarban', bn:'বান্দরবান', icon:'⛰️', sky:['#B7D7C9','#4F7C63'], blockGrad:['#3F6B4A','#234832'], accent:'#7FB77E',
+        draw(ctx,w,h,t){
+          drawMountainLayers(ctx,w,h,[
+            {y:h*0.5,amp:24,color:'rgba(90,130,105,0.35)'},
+            {y:h*0.62,amp:34,color:'rgba(60,100,75,0.4)'},
+            {y:h*0.76,amp:44,color:'rgba(35,72,50,0.5)'},
+          ]);
+          drawFogBands(ctx,t,w,h,[{y:h*0.55,h:26,alpha:0.18},{y:h*0.68,h:30,alpha:0.22}],'#ffffff',1);
+          drawBirds(ctx,t,w,h,{y0:h*0.2,y1:h*0.34},2,'rgba(40,50,40,0.4)',0.6);
+        }
+      },
+      { key:'saintmartin', name:'Saint Martin', bn:'সেন্ট মার্টিন', icon:'🏝️', sky:['#7FD8D0','#EAF9F6'], blockGrad:['#8FD9C4','#3F9B87'], accent:'#2EC4B6',
+        draw(ctx,w,h,t){
+          drawSunGlow(ctx,t,w*0.7,h*0.3,70,'#FFF3C4');
+          drawWaves(ctx,t,w,h,{y0:h*0.6},5,'rgba(60,190,180,0.4)',1.1);
+          drawWaves(ctx,t,w,h,{y0:h*0.7},4,'rgba(30,140,150,0.35)',1.6);
+          drawBoats(ctx,t,w,h,{y0:h*0.64,y1:h*0.7},2,'rgba(70,60,45,0.5)',1.2);
+          drawBirds(ctx,t,w,h,{y0:h*0.15,y1:h*0.26},3,'rgba(255,255,255,0.8)',0.8);
+        }
+      },
+      { key:'sundarbans', name:'Sundarbans', bn:'সুন্দরবন', icon:'🐯', sky:['#5B8F6A','#DDEBC8'], blockGrad:['#2E5C3E','#173824'], accent:'#8FBF7F',
+        draw(ctx,w,h,t){
+          drawFogBands(ctx,t,w,h,[{y:h*0.5,h:24,alpha:0.16},{y:h*0.6,h:28,alpha:0.2}],'#ffffff',0.8);
+          drawWaves(ctx,t,w,h,{y0:h*0.72},4,'rgba(60,90,70,0.4)',0.9);
+          drawBirds(ctx,t,w,h,{y0:h*0.18,y1:h*0.3},3,'rgba(255,255,255,0.6)',0.7);
+        }
+      },
+      { key:'teagarden', name:'Tea Garden', bn:'চা বাগান', icon:'🍃', sky:['#CDEAC0','#8FBF7F'], blockGrad:['#4E7C3A','#2F5124'], accent:'#A9D18E',
+        draw(ctx,w,h,t){
+          drawMountainLayers(ctx,w,h,[
+            {y:h*0.55,amp:16,color:'rgba(100,150,90,0.4)'},
+            {y:h*0.68,amp:20,color:'rgba(70,120,65,0.45)'},
+            {y:h*0.82,amp:24,color:'rgba(45,90,45,0.55)'},
+          ]);
+          drawFogBands(ctx,t,w,h,[{y:h*0.5,h:20,alpha:0.16}],'#ffffff',0.7);
+          drawBirds(ctx,t,w,h,{y0:h*0.16,y1:h*0.26},2,'rgba(40,50,40,0.4)',0.6);
+        }
+      },
+      { key:'rangamati', name:'Rangamati', bn:'রাঙামাটি', icon:'🛶', sky:['#9FCBD8','#DDEFE6'], blockGrad:['#7A8F6B','#4C5C40'], accent:'#6FA3B0',
+        draw(ctx,w,h,t){
+          drawMountainLayers(ctx,w,h,[{y:h*0.5,amp:18,color:'rgba(90,120,100,0.35)'},{y:h*0.6,amp:22,color:'rgba(60,90,70,0.4)'}]);
+          drawWaves(ctx,t,w,h,{y0:h*0.7},4,'rgba(90,150,165,0.4)',1);
+          drawBoats(ctx,t,w,h,{y0:h*0.74,y1:h*0.82},2,'rgba(60,50,40,0.5)',0.9);
+        }
+      },
+      { key:'kuakata', name:'Kuakata', bn:'কুয়াকাটা', icon:'🌅', sky:['#FF9A6C','#FFD9A0'], blockGrad:['#E0A96D','#B87F49'], accent:'#FF9A6C',
+        draw(ctx,w,h,t){
+          drawSunGlow(ctx,t,w*0.5,h*0.46,100,'#FFDDA0');
+          drawWaves(ctx,t,w,h,{y0:h*0.64},6,'rgba(230,140,90,0.35)',1.2);
+          drawWaves(ctx,t,w,h,{y0:h*0.74},4,'rgba(200,110,80,0.3)',1.7);
+          drawBirds(ctx,t,w,h,{y0:h*0.2,y1:h*0.32},3,'rgba(70,40,30,0.5)',0.8);
+        }
+      },
+    ];
+
+    function sceneIndexForScore(s){ return Math.floor(s/10) % THEMES.length; }
+    function levelForScore(s){ return Math.floor(s/10)+1; }
+
+    // ---- config ----
+    const BLOCK_HEIGHT = 34;
+    const MIN_WIDTH = 16;
+    const PERFECT_TOLERANCE = 5;
+
+    const SKINS = [
+      {id:'classic', name:'Classic', bn:'ক্লাসিক', price:0, grad:null, icon:'🎨'},
+      {id:'neon', name:'Neon', bn:'নিয়ন', price:150, grad:['#00F5FF','#7C4DFF'], icon:'💠'},
+      {id:'marble', name:'Marble', bn:'মার্বেল', price:250, grad:['#F2F2F2','#B8B8C8'], icon:'⬜'},
+      {id:'gold', name:'Gold', bn:'সোনা', price:400, grad:['#FFE08A','#C9931B'], icon:'🏆'},
+      {id:'candy', name:'Candy', bn:'ক্যান্ডি', price:200, grad:['#FF8AD8','#8AD1FF'], icon:'🍬'},
+    ];
+    const TRAILS = [
+      {id:'none', name:'No Trail', bn:'কোনো ট্রেইল নেই', price:0, color:null},
+      {id:'sparkle', name:'Sparkle Trail', bn:'ঝিলমিল ট্রেইল', price:180, color:'#FFE08A'},
+      {id:'fire', name:'Fire Trail', bn:'আগুনের ট্রেইল', price:300, color:'#FF6B4A'},
+    ];
+
+    const ACHV_DEFS = (()=>{
+      const defs = [];
+      [10,25,50,100,200].forEach(n=>defs.push({id:'stack'+n, name:'Stack '+n, bn:n+' ব্লক স্ট্যাক করুন', icon:'🧱', check:s=>s.totalBlocks>=n}));
+      [5,10,20,50,100].forEach(n=>defs.push({id:'perfect'+n, name:'Perfect x'+n, bn:n+'টি পারফেক্ট হিট', icon:'✨', check:s=>s.totalPerfects>=n}));
+      [5,10,20].forEach(n=>defs.push({id:'combo'+n, name:'Combo x'+n, bn:'টানা '+n+' পারফেক্ট', icon:'🔥', check:s=>s.bestCombo>=n}));
+      [50,100,200,300,500].forEach(n=>defs.push({id:'score'+n, name:'Score '+n, bn:n+' স্কোর করুন', icon:'⭐', check:s=>s.bestScore>=n}));
+      [100,500,1000,5000].forEach(n=>defs.push({id:'coins'+n, name:n+' Coins', bn:n+' কয়েন সংগ্রহ করুন', icon:'🪙', check:s=>s.totalCoins>=n}));
+      return defs;
+    })();
+
+    function todayKey(){ const d=new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+    function freshMissions(){
+      return [
+        {id:'stack30', name:'Stack 30 Blocks', bn:'৩০টি ব্লক স্ট্যাক করুন', goal:30, progress:0, reward:80, done:false, kind:'blocks'},
+        {id:'perfect10', name:'Perfect x10', bn:'১০টি পারফেক্ট হিট করুন', goal:10, progress:0, reward:100, done:false, kind:'perfects'},
+        {id:'coins100', name:'Collect 100 Coins', bn:'১০০ কয়েন সংগ্রহ করুন', goal:100, progress:0, reward:60, done:false, kind:'coins'},
+      ];
+    }
+
+    // ---- save ----
+    const SAVE_KEY = 'stacktower-save-v1';
+    let save = {
+      best:0, coins:0,
+      ownedSkins:['classic'], equippedSkin:'classic',
+      ownedTrails:['none'], equippedTrail:'none',
+      soundOn:true, musicOn:false,
+      achievements:{},
+      stats:{totalBlocks:0, totalPerfects:0, bestCombo:0, bestScore:0, totalCoins:0},
+      missions:{date:todayKey(), list:freshMissions()},
+    };
+    let saveTimer=null;
+    function queueSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(doSave, 400); }
+    async function doSave(){
+      try{ await window.storage.set(SAVE_KEY, JSON.stringify(save), false); }catch(e){}
+    }
+    async function loadSave(){
+      try{
+        const res = await window.storage.get(SAVE_KEY, false);
+        if(res && res.value){
+          const loaded = JSON.parse(res.value);
+          save = Object.assign(save, loaded);
+          save.stats = Object.assign({totalBlocks:0,totalPerfects:0,bestCombo:0,bestScore:0,totalCoins:0}, loaded.stats||{});
+          if(!loaded.missions || loaded.missions.date !== todayKey()){
+            save.missions = {date:todayKey(), list:freshMissions()};
+          }
+        }
+      }catch(e){}
+      best = save.best; coins = save.coins;
+      soundOn = save.soundOn; musicOn = save.musicOn;
+      el('soundToggle').textContent = soundOn?'🔊':'🔇';
+      el('musicToggle').textContent = musicOn?'🎵':'🔈';
+      refreshMenuStats();
+    }
+
+    // ---- DOM refs ----
+    const app = el('app');
+    const canvas = el('canvas');
+    const ctx = canvas.getContext('2d');
+    const screens = {menu:el('menu'), shop:el('shop'), missions:el('missions'), achievements:el('achievements'), gameover:el('gameover')};
+    const hScore=el('hScore'), hBest=el('hBest'), hCoins=el('hCoins'), hLevel=el('hLevel'), levelBar=el('levelBar');
+    const comboToast=el('comboToast'), sceneToast=el('sceneToast'), levelToast=el('levelToast'), achvToast=el('achvToast');
+    const flashOverlay = el('flashOverlay');
+
+    function showScreen(name){
+      Object.values(screens).forEach(s=>s.classList.remove('active'));
+      if(screens[name]) screens[name].classList.add('active');
+      app.classList.toggle('in-game', name==='playing');
+      app.classList.toggle('panel-open', ['shop','missions','achievements'].includes(name));
+    }
+
+    // ---- sizing ----
+    let W=0,H=0,DPR=1,FIXED_Y=160;
+    function resize(){
+      const rect = app.getBoundingClientRect();
+      W=rect.width; H=rect.height; DPR=Math.min(2,window.devicePixelRatio||1);
+      canvas.width=W*DPR; canvas.height=H*DPR;
+      canvas.style.width=W+'px'; canvas.style.height=H+'px';
+      ctx.setTransform(DPR,0,0,DPR,0,0);
+      FIXED_Y = H*0.26;
+      skylineLightsCache = {};
+      if(moving) moving.x = clamp(moving.x, 0, Math.max(0, W-moving.width));
+    }
+    window.addEventListener('resize', resize);
+
+    // resume audio (and re-arm the music loop) when the tab/app regains focus —
+    // mobile browsers frequently suspend the AudioContext in the background
+    document.addEventListener('visibilitychange', ()=>{
+      if(document.visibilityState==='visible' && actx){
+        try{ actx.resume && actx.resume(); }catch(e){}
+        if(musicOn && !musicNodes) startMusic();
+      }
+    });
+
+    // ---- audio ----
+    let actx=null, soundOn=true, musicOn=false, musicNodes=null;
+    function audioCtx(){ if(!actx) actx=new (window.AudioContext||window.webkitAudioContext)(); return actx; }
+    function beep(freq,dur,type,gain,delay){
+      if(!soundOn) return;
+      try{
+        const c=audioCtx(); const t0=c.currentTime+(delay||0);
+        const o=c.createOscillator(); const g=c.createGain();
+        o.type=type||'sine'; o.frequency.setValueAtTime(freq,t0);
+        g.gain.setValueAtTime(gain||0.08,t0);
+        o.connect(g); g.connect(c.destination);
+        o.start(t0); g.gain.exponentialRampToValueAtTime(0.001, t0+dur); o.stop(t0+dur);
+      }catch(e){}
+    }
+    function soundTing(){ beep(1100,0.14,'sine',0.09); }
+    function soundCrash(){ beep(220,0.16,'sawtooth',0.08); }
+    function soundBoom(){ beep(90,0.5,'sawtooth',0.14); beep(60,0.4,'sine',0.1,0.06); }
+    function soundLevelUp(){ beep(520,0.1,'triangle',0.08); beep(780,0.14,'triangle',0.08,0.09); beep(1040,0.16,'triangle',0.07,0.18); }
+    function soundScene(){ beep(660,0.1,'sine',0.06); beep(880,0.12,'sine',0.06,0.08); beep(1320,0.16,'sine',0.05,0.16); }
+    function soundComboTier(){ beep(950,0.12,'square',0.05); beep(1250,0.14,'square',0.05,0.07); }
+    function soundCoin(){ beep(1500,0.06,'square',0.03); }
+    function soundUnlock(){ beep(700,0.1,'triangle',0.07); beep(1100,0.14,'triangle',0.07,0.1); }
+    function startMusic(){
+      if(!musicOn || musicNodes) return;
+      try{
+        const c=audioCtx();
+        const notes=[220,262,196,247];
+        let i=0;
+        musicNodes = setInterval(()=>{
+          if(!musicOn) return;
+          const o=c.createOscillator(), g=c.createGain();
+          o.type='sine'; o.frequency.value=notes[i%notes.length]; i++;
+          g.gain.setValueAtTime(0,c.currentTime);
+          g.gain.linearRampToValueAtTime(0.025,c.currentTime+0.4);
+          g.gain.linearRampToValueAtTime(0,c.currentTime+1.6);
+          o.connect(g); g.connect(c.destination);
+          o.start(); o.stop(c.currentTime+1.7);
+        }, 1800);
+      }catch(e){}
+    }
+    function stopMusic(){ if(musicNodes){ clearInterval(musicNodes); musicNodes=null; } }
+    el('soundToggle').addEventListener('click', ()=>{
+      soundOn=!soundOn; el('soundToggle').textContent=soundOn?'🔊':'🔇';
+      save.soundOn=soundOn; queueSave();
+    });
+    el('musicToggle').addEventListener('click', ()=>{
+      musicOn=!musicOn; el('musicToggle').textContent=musicOn?'🎵':'🔈';
+      save.musicOn=musicOn; queueSave();
+      if(musicOn){ try{audioCtx().resume&&audioCtx().resume();}catch(e){} startMusic(); } else stopMusic();
+    });
+
+    // ---- particles ----
+    let particles = [];
+    let coinParticles = [];
+    const MAX_PARTICLES = 220;
+    function spawnParticles(x,y,count,cfg){
+      for(let i=0;i<count && particles.length<MAX_PARTICLES;i++){
+        const ang = cfg.spread ? rand(0,Math.PI*2) : rand(cfg.angleMin||0,cfg.angleMax||Math.PI*2);
+        const spd = rand(cfg.speedMin||1,cfg.speedMax||3);
+        particles.push({
+          x,y,
+          vx:Math.cos(ang)*spd, vy:Math.sin(ang)*spd - (cfg.upBias||0),
+          size:rand(cfg.sizeMin||2,cfg.sizeMax||4),
+          color:cfg.colors[(Math.random()*cfg.colors.length)|0],
+          alpha:1, decay:cfg.decay||0.02, gravity:cfg.gravity!=null?cfg.gravity:0.12,
+          rot:rand(0,6.28), vr:rand(-0.2,0.2), shape:cfg.shape||'circle'
+        });
+      }
+    }
+    function updateParticles(dt){
+      particles.forEach(p=>{
+        p.x+=p.vx*dt; p.y+=p.vy*dt; p.vy+=p.gravity*dt; p.rot+=p.vr*dt; p.alpha-=p.decay*dt;
+      });
+      particles = particles.filter(p=>p.alpha>0 && p.y<H+60);
+    }
+    function renderParticles(){
+      particles.forEach(p=>{
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+        ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+        ctx.fillStyle=p.color;
+        if(p.shape==='rect') ctx.fillRect(-p.size/2,-p.size/2,p.size,p.size*0.6);
+        else { ctx.beginPath(); ctx.arc(0,0,p.size/2,0,7); ctx.fill(); }
+        ctx.restore();
+      });
+    }
+
+    // ---- rings (perfect-hit shockwave) ----
+    function spawnRing(x,y,color,maxR){
+      rings.push({x,y,r:4,maxR:maxR||46,alpha:0.9,color:color||'#FFE08A'});
+    }
+    function updateRings(dt){
+      const t=dt/16.67;
+      rings.forEach(r=>{ r.r += (r.maxR-r.r)*0.22*t + 0.6*t; r.alpha -= 0.045*t; });
+      rings = rings.filter(r=>r.alpha>0);
+    }
+    function renderRings(){
+      rings.forEach(r=>{
+        ctx.save();
+        ctx.globalAlpha=Math.max(0,r.alpha);
+        ctx.strokeStyle=r.color; ctx.lineWidth=2.5;
+        ctx.beginPath(); ctx.arc(r.x,r.y,r.r,0,7); ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    function coinHudPos(){
+      const r1 = el('coinHud').getBoundingClientRect();
+      const r0 = app.getBoundingClientRect();
+      return {x:r1.left-r0.left+r1.width/2, y:r1.top-r0.top+r1.height/2};
+    }
+    function spawnCoinFly(x,y,count){
+      const target = coinHudPos();
+      for(let i=0;i<count;i++){
+        coinParticles.push({sx:x+rand(-8,8), sy:y+rand(-4,4), tx:target.x, ty:target.y, t:0, dur:rand(0.45,0.65), delay:i*0.05});
+      }
+    }
+    function updateCoinParticles(dt){
+      coinParticles.forEach(p=>{
+        if(p.delay>0){ p.delay-=dt*0.016; return; }
+        p.t += dt*0.016;
+      });
+      coinParticles = coinParticles.filter(p=>{
+        if(p.t >= p.dur){ return false; }
+        return true;
+      });
+    }
+    function renderCoinParticles(){
+      coinParticles.forEach(p=>{
+        if(p.delay>0) return;
+        const k = clamp(p.t/p.dur,0,1);
+        const ease = 1-Math.pow(1-k,3);
+        const x = lerp(p.sx,p.tx,ease);
+        const y = lerp(p.sy,p.ty,ease) - Math.sin(k*Math.PI)*24;
+        ctx.save();
+        ctx.globalAlpha = 1-k*0.3;
+        ctx.fillStyle = '#F4C430';
+        ctx.beginPath(); ctx.arc(x,y,5,0,7); ctx.fill();
+        ctx.strokeStyle='#B8860B'; ctx.lineWidth=1; ctx.stroke();
+        ctx.restore();
+      });
+    }
+
+    // ---- game state ----
+    let state='menu';
+    let score=0, best=0, coins=0;
+    let comboCount=0, bestComboRun=0, totalPerfectsRun=0, totalBlocksRun=0, coinsEarnedRun=0;
+    let placed=[], moving=null, falling=[];
+    let shakeT=0, zoomPulseT=0, sceneFlashT=0, sceneScale=1;
+    let currentThemeIdx=0, currentLevel=1;
+    let towerHeightBlocks=0;
+    let runStartTime=0;
+    let timeScale=1, slowMoT=0;
+
+    // ---- juice state ----
+    let hitPauseT=0;                       // freeze-frame ms on perfect hits
+    let landPulse={t:999,dur:150,mag:0};   // squash/stretch pulse for the newest block
+    let rings=[];                          // expanding ring shockwaves
+    let ambientT=0;                        // ambient dust timer
+    let achvQueue=[];                      // sequential achievement toast queue
+    let achvBusy=false;
+
+    // ---- collapse cinematic ----
+    let collapsePieces=[];
+    let collapseT=0, collapseDur=1300, collapseTimer=null, collapseDarken=0;
+
+    function speedForScore(s){
+      const lvl = levelForScore(s);
+      return clamp(2.0 + lvl*0.32, 2.0, 7.5);
+    }
+
+    function refreshMenuStats(){
+      el('menuBest').textContent = best;
+      el('menuCoins').textContent = coins;
+      const strip = el('menuThemeStrip'); strip.innerHTML='';
+      THEMES.forEach((th,i)=>{
+        const d=document.createElement('div');
+        d.className='theme-chip';
+        d.style.background = th.sky[0];
+        d.textContent = th.icon;
+        strip.appendChild(d);
+      });
+    }
+
+    function startGame(){
+      try{ audioCtx().resume && audioCtx().resume(); }catch(e){}
+      if(musicOn) startMusic();
+      score=0; comboCount=0; bestComboRun=0; totalPerfectsRun=0; totalBlocksRun=0; coinsEarnedRun=0;
+      falling=[]; particles=[]; coinParticles=[]; rings=[]; collapsePieces=[];
+      shakeT=0; zoomPulseT=0; sceneFlashT=0; sceneScale=1; collapseDarken=0; hitPauseT=0; slowMoT=0;
+      landPulse={t:999,dur:150,mag:0};
+      clearTimeout(collapseTimer); collapseTimer=null;
+      towerHeightBlocks=0; currentThemeIdx=0; currentLevel=1;
+      runStartTime = performance.now();
+      hScore.textContent='0'; hBest.textContent=best; hCoins.textContent=coins; hLevel.textContent='1';
+      levelBar.style.width='0%';
+
+      const baseWidth = W*0.62;
+      placed = [{x:(W-baseWidth)/2, width:baseWidth}];
+      spawnMoving(baseWidth);
+
+      state='playing';
+      showScreen('playing');
+    }
+
+    function spawnMoving(width){
+      const fromLeft = Math.random()>0.5;
+      moving = { x: fromLeft?0:(W-width), width, dir: fromLeft?1:-1, speed: speedForScore(score), bob:0 };
+    }
+
+    function comboTierText(n){
+      if(n>=20) return {text:'LEGENDARY', color:'#7C4DFF'};
+      if(n>=10) return {text:'UNBELIEVABLE', color:'#00E5FF'};
+      if(n>=5) return {text:'INCREDIBLE', color:'#FF4D8D'};
+      if(n>=3) return {text:'AWESOME', color:'#FF8A5B'};
+      return {text:'PERFECT', color:'#F4C430'};
+    }
+
+    function dropBlock(){
+      if(state!=='playing' || !moving) return;
+      const top = placed[placed.length-1];
+      const mx1=moving.x, mx2=moving.x+moving.width;
+      const tx1=top.x, tx2=top.x+top.width;
+      const ol1=Math.max(mx1,tx1), ol2=Math.min(mx2,tx2);
+      const overlap = ol2-ol1;
+      const landX = moving.x + moving.width/2;
+
+      if(overlap<=0){
+        createFallingPiece(mx1, moving.width, true);
+        comboCount=0;
+        soundBoom(); triggerShake(1);
+        startCollapse();   // was: finishGame() called instantly, which froze the fall/shake — now plays the cinematic first
+        return;
+      }
+
+      const isPerfect = Math.abs(overlap-top.width)<=PERFECT_TOLERANCE && Math.abs(mx1-tx1)<=PERFECT_TOLERANCE;
+
+      landPulse = {t:0, dur:150, mag: isPerfect?1:0.6};
+
+      if(isPerfect){
+        placed.push({x:tx1, width:top.width});
+        score+=2; addCoins(1); comboCount++; totalPerfectsRun++;
+        bestComboRun=Math.max(bestComboRun,comboCount);
+        soundTing();
+        spawnParticles(landX, FIXED_Y, 10, {colors:['#FFE08A','#FFF3C4','#F4C430'], sizeMin:2,sizeMax:4, speedMin:1,speedMax:3.4, gravity:0.08, decay:0.018, upBias:1.2});
+        spawnRing(landX, FIXED_Y+BLOCK_HEIGHT*0.5, '#FFE08A', 50);
+        hitPauseT = 55; // tiny freeze-frame punch for a "perfect" to feel weighty
+        const tier = comboTierText(comboCount);
+        showComboToast(tier.text+(comboCount>1?' ×'+comboCount:''), tier.color);
+        if(comboCount>0 && comboCount%5===0){
+          const bonus = comboCount>=20?50:(comboCount>=10?25:10);
+          score+=bonus; soundComboTier(); flashScreen(0.28, tier.color); triggerSlowMo(260);
+          spawnRing(landX, FIXED_Y+BLOCK_HEIGHT*0.5, tier.color, 90);
+          spawnParticles(W/2, H*0.3, 26, {colors:['#FF4D8D','#00E5FF','#F4C430','#7C4DFF','#FFFFFF'], sizeMin:3,sizeMax:6, speedMin:2,speedMax:6, gravity:0.15, decay:0.012, shape:'rect', spread:true});
+        }
+        triggerShake(0.35);
+      } else {
+        if(mx1<ol1) createFallingPiece(mx1, ol1-mx1, false);
+        if(mx2>ol2) createFallingPiece(ol2, mx2-ol2, false);
+        placed.push({x:ol1, width:overlap});
+        score+=1; addCoins(1); comboCount=0;
+        soundCrash();
+        spawnParticles(landX, FIXED_Y+BLOCK_HEIGHT*0.6, 6, {colors:['#D8CBB0','#B8A888'], sizeMin:1.5,sizeMax:3, speedMin:0.5,speedMax:1.6, gravity:0.2, decay:0.03, angleMin:Math.PI*0.15, angleMax:Math.PI*0.85});
+        comboToast.classList.remove('toast-anim');
+        triggerShake(0.5);
+        if(overlap<MIN_WIDTH){
+          soundBoom(); triggerShake(1);
+          spawnCoinFly(landX, FIXED_Y, 1);
+          towerHeightBlocks++; totalBlocksRun++;
+          hScore.textContent=score; hCoins.textContent=coins;
+          updateMissionProgress('blocks',1);
+          startCollapse();  // let the too-thin landing register visually before the tower topples
+          return;
+        }
+      }
+
+      spawnCoinFly(landX, FIXED_Y, isPerfect?2:1);
+      towerHeightBlocks++; totalBlocksRun++;
+
+      hScore.textContent=score; hCoins.textContent=coins;
+      updateMissionProgress('blocks',1);
+      if(isPerfect) updateMissionProgress('perfects',1);
+      hCoins.textContent=coins; // re-sync in case a mission reward just landed
+
+      const newLevel = levelForScore(score);
+      const newSceneIdx = sceneIndexForScore(score);
+      if(newLevel !== currentLevel){
+        currentLevel = newLevel;
+        hLevel.textContent = currentLevel;
+        soundLevelUp();
+        showLevelToast(currentLevel);
+        if(newSceneIdx !== currentThemeIdx){
+          currentThemeIdx = newSceneIdx;
+          setTimeout(()=>showSceneToast(THEMES[currentThemeIdx]), 550);
+          sceneFlashT = 1; zoomPulseT = 1; soundScene();
+        }
+      }
+      levelBar.style.width = (score%10)*10+'%';
+      if(score%20===0){ zoomPulseT = 1; }
+
+      checkAchievementsLive();
+      spawnMoving(placed[placed.length-1].width);
+    }
+
+    function addCoins(n){ coins+=n; coinsEarnedRun+=n; save.stats.totalCoins=(save.stats.totalCoins||0)+n; }
+
+    function createFallingPiece(x,width,big){
+      falling.push({
+        x, y:FIXED_Y, width, height:BLOCK_HEIGHT,
+        vx:(x<W/2?-1:1)*(big?1.2:1.8)-rand(0,0.6),
+        vy: big?-2:-3.5, vr:rand(-0.3,0.3), rot:0, alpha:1,
+        colorTop: THEMES[currentThemeIdx].blockGrad[0], colorBot: THEMES[currentThemeIdx].blockGrad[1]
+      });
+    }
+
+    // ---- game-over cinematic: tower collapses instead of vanishing instantly ----
+    function startCollapse(){
+      if(state==='collapsing') return;
+      state='collapsing';
+      collapseT=0; collapseDarken=0;
+      const grad = THEMES[currentThemeIdx].blockGrad;
+      const topIndex = placed.length-1;
+      const MAX_PIECES = 34; // cap for perf on very tall towers
+      const keepCount = Math.max(0, placed.length-MAX_PIECES); // bottom of very tall towers stays put (off-screen anyway)
+      collapsePieces = [];
+      for(let i=topIndex,k=0; i>=keepCount; i--,k++){
+        const b = placed[i];
+        const y = FIXED_Y + BLOCK_HEIGHT*(k+1);
+        if(y>H+BLOCK_HEIGHT) break;
+        collapsePieces.push({
+          x:b.x, y, width:b.width, height:BLOCK_HEIGHT,
+          vx: rand(-1.6,1.6), vy: rand(-3.2,-0.6),
+          rot:0, vr: rand(-0.14,0.14),
+          delay: k*22,           // cascades from the top down
+          alpha:1,
+          colorTop:grad[0], colorBot:grad[1]
+        });
+      }
+      placed = placed.slice(0, keepCount);
+      triggerShake(1);
+      clearTimeout(collapseTimer);
+      collapseTimer = setTimeout(finishGame, collapseDur);
+    }
+    function updateCollapse(rawDt, tSec){
+      const t = rawDt/16.67;
+      collapseT += rawDt;
+      collapseDarken = clamp(collapseT/collapseDur, 0, 0.62);
+      if(shakeT>0.15) shakeT=Math.max(0.15, shakeT-0.02*t); // sustained rumble through the collapse
+      collapsePieces.forEach(p=>{
+        if(p.delay>0){ p.delay-=rawDt; return; }
+        p.x+=p.vx*t; p.y+=p.vy*t; p.vy+=0.32*t; p.rot+=p.vr*t;
+        if(p.y>H*0.55) p.alpha-=0.014*t;
+      });
+      // occasional dust puff while things are crashing down
+      if(Math.random()<0.28 && particles.length<MAX_PARTICLES){
+        spawnParticles(rand(W*0.2,W*0.8), H*0.55, 1, {colors:['#C9C2B0','#A69C86'], sizeMin:2,sizeMax:4, speedMin:0.3,speedMax:1, gravity:0.05, decay:0.02, spread:true});
+      }
+    }
+    function renderCollapse(){
+      collapsePieces.forEach(p=>{
+        if(p.delay>0) return;
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+        ctx.translate(p.x+p.width/2,p.y+p.height/2); ctx.rotate(p.rot);
+        const g = ctx.createLinearGradient(-p.width/2,0,p.width/2,0);
+        g.addColorStop(0,p.colorTop); g.addColorStop(1,p.colorBot);
+        ctx.fillStyle=g;
+        roundRect(-p.width/2,-p.height/2,p.width,p.height,5); ctx.fill();
+        ctx.restore();
+      });
+    }
+
+    function showComboToast(text,color){
+      comboToast.textContent = text;
+      comboToast.style.color = color;
+      comboToast.style.textShadow = '0 0 12px '+color+', 0 0 24px '+color+'80';
+      comboToast.classList.remove('toast-anim'); void comboToast.offsetWidth;
+      comboToast.classList.add('toast-anim');
+    }
+    function showSceneToast(theme){
+      el('sceneIcon').textContent = theme.icon;
+      el('sceneName').textContent = theme.name;
+      el('sceneBn').textContent = theme.bn;
+      sceneToast.classList.remove('toast-anim-long'); void sceneToast.offsetWidth;
+      sceneToast.classList.add('toast-anim-long');
+    }
+    function showLevelToast(n){
+      levelToast.textContent = 'LEVEL '+n;
+      levelToast.style.color = '#fff';
+      levelToast.classList.remove('toast-anim'); void levelToast.offsetWidth;
+      levelToast.classList.add('toast-anim');
+    }
+    function showAchvToast(def){
+      achvQueue.push(def);
+      processAchvQueue();
+    }
+    function processAchvQueue(){
+      if(achvBusy || achvQueue.length===0) return;
+      achvBusy = true;
+      const def = achvQueue.shift();
+      achvToast.textContent = '🏅 '+def.name+' — '+def.bn;
+      achvToast.classList.remove('toast-anim-long'); void achvToast.offsetWidth;
+      achvToast.classList.add('toast-anim-long');
+      soundUnlock();
+      setTimeout(()=>{ achvBusy=false; processAchvQueue(); }, 1500);
+    }
+    function flashScreen(peak,color){
+      flashOverlay.style.background = color||'#fff';
+      flashOverlay.style.transition='none';
+      flashOverlay.style.opacity=peak;
+      requestAnimationFrame(()=>{
+        flashOverlay.style.transition='opacity .4s ease';
+        flashOverlay.style.opacity=0;
+      });
+    }
+    function triggerShake(mag){ shakeT = Math.max(shakeT, mag); }
+    function triggerSlowMo(ms){ slowMoT = ms; }
+
+    function updateMissionProgress(kind, amt){
+      let leveled=false;
+      save.missions.list.forEach(m=>{
+        if(m.kind===kind && !m.done){
+          m.progress = Math.min(m.goal, m.progress+amt);
+          if(m.progress>=m.goal){ m.done=true; coins+=m.reward; addCoins(0); leveled=true; }
+        }
+      });
+      queueSave();
+    }
+
+    function checkAchievementsLive(){
+      const stats = {
+        totalBlocks: (save.stats.totalBlocks||0)+totalBlocksRun,
+        totalPerfects: (save.stats.totalPerfects||0)+totalPerfectsRun,
+        bestCombo: Math.max(save.stats.bestCombo||0, bestComboRun),
+        bestScore: Math.max(save.stats.bestScore||0, score),
+        totalCoins: save.stats.totalCoins||0,
+      };
+      ACHV_DEFS.forEach(def=>{
+        if(!save.achievements[def.id] && def.check(stats)){
+          save.achievements[def.id]=true;
+          showAchvToast(def);
+        }
+      });
+    }
+
+    function animateCount(elm, from, to, dur, suffix){
+      suffix = suffix||'';
+      if(from===to){ elm.textContent = to+suffix; return; }
+      const t0 = performance.now();
+      function step(now){
+        const k = clamp((now-t0)/dur, 0, 1);
+        const ease = 1-Math.pow(1-k,3);
+        elm.textContent = Math.round(lerp(from,to,ease))+suffix;
+        if(k<1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+
+    function finishGame(){
+      collapseTimer=null;
+      state='gameover';
+      stopMusic();
+      save.stats.totalBlocks = (save.stats.totalBlocks||0)+totalBlocksRun;
+      save.stats.totalPerfects = (save.stats.totalPerfects||0)+totalPerfectsRun;
+      save.stats.bestCombo = Math.max(save.stats.bestCombo||0, bestComboRun);
+      save.stats.bestScore = Math.max(save.stats.bestScore||0, score);
+      updateMissionProgress('coins', coinsEarnedRun); // fixed: this used to also be applied a second time via a duplicate loop below, completing "collect coins" missions after only half the required coins
+      if(score>best) best=score;
+      save.best=best; save.coins=coins;
+      checkAchievementsLive();
+      queueSave();
+
+      const accuracy = totalBlocksRun>0 ? Math.round((totalPerfectsRun/totalBlocksRun)*100) : 0;
+      const playTime = Math.round((performance.now()-runStartTime)/1000);
+
+      setTimeout(()=>{
+        el('goScore').textContent = '0';
+        animateCount(el('goScore'), 0, score, 700);
+        el('gBestCombo').textContent = bestComboRun;
+        el('gAccuracy').textContent = accuracy+'%';
+        el('gHeight').textContent = towerHeightBlocks;
+        el('gCoinsEarned').textContent = '0';
+        animateCount(el('gCoinsEarned'), 0, coinsEarnedRun, 700);
+        el('gScene').textContent = THEMES[currentThemeIdx].icon+' '+THEMES[currentThemeIdx].name;
+        el('gTime').textContent = playTime+'s';
+        el('goSub').textContent = 'টাওয়ার উচ্চতা: '+towerHeightBlocks+' ব্লক';
+        refreshMenuStats();
+        showScreen('gameover');
+        collapsePieces=[]; collapseDarken=0;
+      }, 260);
+    }
+
+    function goToMenu(){
+      if(state==='playing' || state==='collapsing'){
+        if(score>best) best=score;
+        save.best=best; save.coins=coins; queueSave();
+        stopMusic();
+      }
+      clearTimeout(collapseTimer); collapseTimer=null;
+      collapsePieces=[]; collapseDarken=0;
+      state='menu';
+      refreshMenuStats();
+      showScreen('menu');
+    }
+
+    // ---- shop / missions / achievements ----
+    function renderShop(){
+      el('shopCoinsLabel').textContent = '🪙 '+coins+' coins';
+      const skinList = el('skinList'); skinList.innerHTML='';
+      SKINS.forEach(s=>{
+        const owned = save.ownedSkins.includes(s.id);
+        const equipped = save.equippedSkin===s.id;
+        const card = document.createElement('div');
+        card.className='card '+(owned?'unlocked':'locked');
+        card.innerHTML = `<div class="card-icon" style="background:${s.grad?('linear-gradient(135deg,'+s.grad[0]+','+s.grad[1]+')'):'rgba(255,255,255,0.1)'}">${s.icon}</div>
+          <div class="card-body"><div class="card-title">${s.name}</div><div class="card-desc">${s.bn}${s.price?(' • '+s.price+' 🪙'):''}</div></div>
+          <div class="card-action"></div>`;
+        const actionWrap = card.querySelector('.card-action');
+        const btn = document.createElement('button');
+        btn.className='buy-btn'+(equipped?' equipped':(owned?' owned':''));
+        btn.textContent = equipped?'Equipped':(owned?'Equip':'Buy');
+        btn.addEventListener('click', ()=>{
+          if(equipped) return;
+          if(owned){ save.equippedSkin=s.id; queueSave(); renderShop(); return; }
+          if(coins>=s.price){ coins-=s.price; save.coins=coins; save.ownedSkins.push(s.id); save.equippedSkin=s.id; soundUnlock(); queueSave(); refreshMenuStats(); renderShop(); }
+        });
+        actionWrap.appendChild(btn);
+        skinList.appendChild(card);
+      });
+
+      const trailList = el('trailList'); trailList.innerHTML='';
+      TRAILS.forEach(tr=>{
+        const owned = save.ownedTrails.includes(tr.id);
+        const equipped = save.equippedTrail===tr.id;
+        const card = document.createElement('div');
+        card.className='card '+(owned?'unlocked':'locked');
+        card.innerHTML = `<div class="card-icon" style="background:${tr.color?tr.color+'33':'rgba(255,255,255,0.1)'}">✨</div>
+          <div class="card-body"><div class="card-title">${tr.name}</div><div class="card-desc">${tr.bn}${tr.price?(' • '+tr.price+' 🪙'):''}</div></div>
+          <div class="card-action"></div>`;
+        const actionWrap = card.querySelector('.card-action');
+        const btn = document.createElement('button');
+        btn.className='buy-btn'+(equipped?' equipped':(owned?' owned':''));
+        btn.textContent = equipped?'Equipped':(owned?'Equip':'Buy');
+        btn.addEventListener('click', ()=>{
+          if(equipped) return;
+          if(owned){ save.equippedTrail=tr.id; queueSave(); renderShop(); return; }
+          if(coins>=tr.price){ coins-=tr.price; save.coins=coins; save.ownedTrails.push(tr.id); save.equippedTrail=tr.id; soundUnlock(); queueSave(); refreshMenuStats(); renderShop(); }
+        });
+        actionWrap.appendChild(btn);
+        trailList.appendChild(card);
+      });
+    }
+
+    function renderMissions(){
+      if(save.missions.date !== todayKey()){ save.missions = {date:todayKey(), list:freshMissions()}; queueSave(); }
+      const list = el('missionList'); list.innerHTML='';
+      save.missions.list.forEach(m=>{
+        const pct = Math.round((m.progress/m.goal)*100);
+        const card = document.createElement('div');
+        card.className='card';
+        card.innerHTML = `<div class="card-icon" style="background:rgba(244,196,48,0.15);">${m.done?'✅':'🎯'}</div>
+          <div class="card-body">
+            <div class="card-title">${m.name}</div>
+            <div class="card-desc">${m.bn} • ${m.progress}/${m.goal} • 🪙${m.reward}</div>
+            <div class="progress-track"><div class="progress-fill" style="width:${pct}%;"></div></div>
+          </div>`;
+        list.appendChild(card);
+      });
+    }
+
+    function renderAchievements(){
+      const total = ACHV_DEFS.length;
+      const unlocked = ACHV_DEFS.filter(d=>save.achievements[d.id]).length;
+      el('achvProgress').textContent = unlocked+' / '+total+' unlocked';
+      const list = el('achvList'); list.innerHTML='';
+      ACHV_DEFS.forEach(def=>{
+        const done = !!save.achievements[def.id];
+        const card = document.createElement('div');
+        card.className='card '+(done?'unlocked':'locked');
+        card.innerHTML = `<div class="card-icon" style="background:${done?'rgba(244,196,48,0.2)':'rgba(255,255,255,0.06)'};">${done?def.icon:'🔒'}</div>
+          <div class="card-body"><div class="card-title">${def.name}</div><div class="card-desc">${def.bn}</div></div>`;
+        list.appendChild(card);
+      });
+    }
+
+    // ---- input ----
+    canvas.addEventListener('pointerdown', ()=>{ if(state==='playing') dropBlock(); });
+    el('playBtn').addEventListener('click', startGame);
+    el('retryBtn').addEventListener('click', startGame);
+    el('menuBtn2').addEventListener('click', goToMenu);
+    el('backBtn').addEventListener('click', ()=>{
+      if(state==='playing' || state==='collapsing'){ goToMenu(); return; }
+      state='menu'; showScreen('menu'); refreshMenuStats();
+    });
+    el('shopBtn').addEventListener('click', ()=>{ state='shop'; renderShop(); showScreen('shop'); });
+    el('missionsBtn').addEventListener('click', ()=>{ state='missions'; renderMissions(); showScreen('missions'); });
+    el('achvBtn').addEventListener('click', ()=>{ state='achievements'; renderAchievements(); showScreen('achievements'); });
+
+    // ---- render loop ----
+    let lastTime=0;
+    function loop(now){
+      const rawDt = Math.min(32, now-lastTime); lastTime=now;
+      if(hitPauseT>0){
+        // brief freeze-frame punch on a perfect hit — everything nearly stops for one beat
+        hitPauseT -= rawDt;
+        timeScale = 0.04;
+      } else if(slowMoT>0){
+        timeScale=0.35; slowMoT-=rawDt;
+      } else {
+        timeScale=1;
+      }
+      const dt = rawDt*timeScale;
+      if(state==='playing') update(dt, now/1000);
+      if(state==='collapsing') updateCollapse(rawDt, now/1000);
+      updateFalling(dt);
+      updateParticles(dt/16.67);
+      updateCoinParticles(dt);
+      updateRings(dt);
+      if(landPulse.t<landPulse.dur) landPulse.t+=rawDt;
+      render(now/1000);
+      requestAnimationFrame(loop);
+    }
+
+    function update(dt, tSec){
+      const t=dt/16.67;
+      if(moving){
+        moving.x += moving.dir*moving.speed*t;
+        moving.bob += 0.08*t;
+        if(moving.x<0){ moving.x=0; moving.dir=1; }
+        if(moving.x+moving.width>W){ moving.x=W-moving.width; moving.dir=-1; }
+        const trailId = save.equippedTrail;
+        const trailDef = TRAILS.find(tr=>tr.id===trailId);
+        if(trailDef && trailDef.color && Math.random()<0.5){
+          particles.push({
+            x:moving.x+moving.width/2, y:FIXED_Y+BLOCK_HEIGHT/2,
+            vx:rand(-0.2,0.2), vy:rand(0.2,0.6),
+            size:rand(1.5,3), color:trailDef.color, alpha:0.6, decay:0.03, gravity:0.02, rot:0, vr:0, shape:'circle'
+          });
+        }
+      }
+      if(shakeT>0) shakeT=Math.max(0,shakeT-0.07*t);
+      if(zoomPulseT>0) zoomPulseT=Math.max(0,zoomPulseT-0.035*t);
+      if(sceneFlashT>0) sceneFlashT=Math.max(0,sceneFlashT-0.03*t);
+      const targetScale = 1 - clamp(towerHeightBlocks*0.0012, 0, 0.12);
+      sceneScale = lerp(sceneScale, targetScale, 0.04*t);
+
+      // ambient floating dust — cheap, sparse, gives the scene a sense of depth/life
+      ambientT -= dt;
+      if(ambientT<=0 && particles.length<MAX_PARTICLES-20){
+        ambientT = rand(220,420);
+        particles.push({
+          x:rand(0,W), y:H+6, vx:rand(-0.15,0.15), vy:rand(-0.35,-0.15),
+          size:rand(1,2.2), color:'rgba(255,255,255,0.28)', alpha:rand(0.2,0.4),
+          decay:0.0025, gravity:-0.001, rot:0, vr:0, shape:'circle'
+        });
+      }
+    }
+
+    function updateFalling(rawDt){
+      const t = rawDt/16.67;
+      falling.forEach(p=>{ p.x+=p.vx*t*2; p.y+=p.vy*t*2; p.vy+=0.35*t; p.rot+=p.vr*t; p.alpha-=0.012*t; });
+      falling = falling.filter(p=>p.alpha>0 && p.y<H+80);
+    }
+
+    function drawBlock(x,y,width,theme,glow){
+      const skinDef = SKINS.find(s=>s.id===save.equippedSkin);
+      const grad = (skinDef && skinDef.grad) ? skinDef.grad : theme.blockGrad;
+      const g = ctx.createLinearGradient(x,y,x+width,y+BLOCK_HEIGHT);
+      g.addColorStop(0,grad[0]); g.addColorStop(1,grad[1]);
+      ctx.save();
+      ctx.shadowColor='rgba(0,0,0,0.35)'; ctx.shadowBlur=10; ctx.shadowOffsetY=4;
+      ctx.fillStyle=g;
+      roundRect(x,y,width,BLOCK_HEIGHT,6); ctx.fill();
+      ctx.restore();
+      ctx.fillStyle='rgba(255,255,255,0.22)';
+      roundRect(x+2,y+2,width-4,6,4); ctx.fill();
+      ctx.strokeStyle = theme.accent;
+      ctx.globalAlpha = glow?0.9:0.3;
+      ctx.lineWidth = glow?2:1;
+      roundRect(x,y,width,BLOCK_HEIGHT,6); ctx.stroke();
+      ctx.globalAlpha=1;
+    }
+    function roundRect(x,y,w,h,r){
+      ctx.beginPath();
+      ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+      ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+    }
+
+    function render(tSec){
+      ctx.clearRect(0,0,W,H);
+      ctx.save();
+
+      const cx=W/2, cy=H*0.4;
+      const zoom = sceneScale * (1 + zoomPulseT*0.06);
+      ctx.translate(cx,cy); ctx.scale(zoom,zoom); ctx.translate(-cx,-cy);
+      if(shakeT>0){ const mag=shakeT*7; ctx.translate((Math.random()-0.5)*mag,(Math.random()-0.5)*mag); }
+
+      const theme = THEMES[currentThemeIdx];
+      const sky = ctx.createLinearGradient(0,0,0,H);
+      sky.addColorStop(0,theme.sky[0]); sky.addColorStop(1,theme.sky[1]);
+      ctx.fillStyle=sky; ctx.fillRect(0,0,W,H);
+      theme.draw(ctx,W,H,tSec);
+
+      if(sceneFlashT>0){ ctx.fillStyle='rgba(255,255,255,'+(sceneFlashT*0.35)+')'; ctx.fillRect(0,0,W,H); }
+
+      const topIndex = placed.length-1;
+      const pulseActive = landPulse.t < landPulse.dur;
+      const pulseK = pulseActive ? 1-(landPulse.t/landPulse.dur) : 0;
+      // elastic squash: block compresses on landing then springs back taller for a beat
+      const squashY = 1 - 0.22*pulseK*landPulse.mag;
+      const squashX = 1 + 0.14*pulseK*landPulse.mag;
+      for(let i=topIndex,k=0; i>=0; i--,k++){
+        const y = FIXED_Y + BLOCK_HEIGHT*(k+1);
+        if(y>H+BLOCK_HEIGHT) break;
+        if(i===topIndex && pulseActive){
+          const b = placed[i];
+          ctx.save();
+          ctx.translate(b.x+b.width/2, y+BLOCK_HEIGHT);
+          ctx.scale(squashX, squashY);
+          ctx.translate(-(b.x+b.width/2), -(y+BLOCK_HEIGHT));
+          drawBlock(b.x, y, b.width, theme, true);
+          ctx.restore();
+        } else {
+          drawBlock(placed[i].x, y, placed[i].width, theme, i===topIndex);
+        }
+      }
+
+      if(state==='playing' && moving){
+        const bobY = FIXED_Y + Math.sin(moving.bob)*2.5;
+        drawBlock(moving.x, bobY, moving.width, theme, true);
+      }
+
+      if(state==='collapsing') renderCollapse();
+
+      renderParticles();
+      renderRings();
+
+      falling.forEach(p=>{
+        ctx.save(); ctx.globalAlpha=Math.max(0,p.alpha);
+        ctx.translate(p.x+p.width/2,p.y+p.height/2); ctx.rotate(p.rot);
+        const g = ctx.createLinearGradient(-p.width/2,0,p.width/2,0);
+        g.addColorStop(0,p.colorTop); g.addColorStop(1,p.colorBot);
+        ctx.fillStyle=g;
+        ctx.fillRect(-p.width/2,-p.height/2,p.width,p.height);
+        ctx.restore();
+      });
+
+      renderCoinParticles();
+
+      ctx.restore();
+
+      // screen darkens as the tower finishes collapsing, drawn in screen-space (unaffected by shake/zoom)
+      if(collapseDarken>0){
+        ctx.fillStyle='rgba(4,4,8,'+collapseDarken+')';
+        ctx.fillRect(0,0,W,H);
+      }
+    }
+
+    // ---- boot ----
+    resize();
+    loadSave().then(()=>{ requestAnimationFrame(t=>{ lastTime=t; requestAnimationFrame(loop); }); });
+  })();
+</script>
+</body>
+</html>
